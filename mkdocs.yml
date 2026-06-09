@@ -1,0 +1,39 @@
+site_name: Elan Ding
+site_url: https://elan-elan.github.io/
+site_description: Personal website and research notes from Elan Ding.
+
+theme:
+  name: simple-blog
+
+nav:
+  - Home: index.md
+  - CVPR 2026: blog/cvpr2026.md
+
+not_in_nav: |
+  blog/cvpr2026/3d-geometry.md
+  blog/cvpr2026/diffusion-solvers.md
+  blog/cvpr2026/geospatial-active-perception.md
+  blog/cvpr2026/tokenization-structured-output.md
+  blog/cvpr2026/vlm-reliability.md
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - fenced_code
+  - md_in_html
+  - pymdownx.arithmatex:
+      generic: true
+  - tables
+  - toc:
+      permalink: true
+
+extra_css:
+  - stylesheets/blog.css
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+  - javascripts/cvpr2026-stats.js

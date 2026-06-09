@@ -10,7 +10,6 @@ nav:
   - CVPR 2026: blog/cvpr2026.md
 
 not_in_nav: |
-  blog/modern-deep-learning-study-guide.md
   blog/cvpr2026/3d-geometry.md
   blog/cvpr2026/diffusion-solvers.md
   blog/cvpr2026/geospatial-active-perception.md

@@ -15,9 +15,3 @@ Elan is also a named inventor on patented approaches in property analytics, incl
 	<strong>Mechanisms for structured visual reasoning</strong>
 	<em>Read the report index</em>
 </a>
-
-<a class="home-writing-card" href="blog/modern-deep-learning-study-guide/">
-	<span>Study Guide</span>
-	<strong>Modern deep learning concepts from CVPR 2026</strong>
-	<em>Start with the 224 x 224 example</em>
-</a>

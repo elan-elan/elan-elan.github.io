@@ -594,47 +594,6 @@ button.cvpr-stat-bar-row.is-selected .cvpr-stat-label {
   border-style: dashed !important;
 }
 
-.cvpr-study-guide-card {
-  max-width: 34rem;
-}
-
-.study-mermaid-shell {
-  background: #fbfcfe;
-  border: 1px solid #d7dce2;
-  border-radius: 8px;
-  box-sizing: border-box;
-  margin: 1rem 0 1.5rem;
-  max-width: 100%;
-  overflow-x: auto;
-  padding: 0.95rem;
-  width: 100%;
-}
-
-.study-mermaid-shell .mermaid {
-  min-width: 0;
-  text-align: center;
-}
-
-.study-summary-grid {
-  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-}
-
-.study-summary-grid > div {
-  min-height: 0;
-}
-
-details.cvpr-study-card {
-  border: 1px solid #d7dce2;
-  border-radius: 8px;
-  margin: 0.75rem 0;
-  padding: 0.75rem 0.95rem;
-}
-
-details.cvpr-study-card summary {
-  cursor: pointer;
-  font-weight: 700;
-}
-
 .diffusion-toy-demo {
   background: #fbfcfe;
   border: 1px solid #d7dce2;

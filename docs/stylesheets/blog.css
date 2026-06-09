@@ -520,6 +520,23 @@ button.cvpr-stat-bar-row.is-selected .cvpr-stat-label {
 }
 
 @media (max-width: 760px) {
+  article pre,
+  article pre code {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  article table {
+    table-layout: fixed;
+    width: 100%;
+  }
+
+  article th,
+  article td {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
   .cvpr-stat-bar-row {
     grid-template-columns: 1fr 5rem;
   }
@@ -568,6 +585,35 @@ button.cvpr-stat-bar-row.is-selected .cvpr-stat-label {
 
 .paper-placeholder {
   border-style: dashed !important;
+}
+
+.cvpr-study-guide-card {
+  max-width: 34rem;
+}
+
+.study-mermaid-shell {
+  background: #fbfcfe;
+  border: 1px solid #d7dce2;
+  border-radius: 8px;
+  box-sizing: border-box;
+  margin: 1rem 0 1.5rem;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 0.95rem;
+  width: 100%;
+}
+
+.study-mermaid-shell .mermaid {
+  min-width: 0;
+  text-align: center;
+}
+
+.study-summary-grid {
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+}
+
+.study-summary-grid > div {
+  min-height: 0;
 }
 
 details.cvpr-study-card {

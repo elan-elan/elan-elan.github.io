@@ -10,6 +10,7 @@ nav:
   - CVPR 2026: blog/cvpr2026.md
 
 not_in_nav: |
+  blog/modern-deep-learning-study-guide.md
   blog/cvpr2026/3d-geometry.md
   blog/cvpr2026/diffusion-solvers.md
   blog/cvpr2026/geospatial-active-perception.md
@@ -36,4 +37,6 @@ extra_css:
 extra_javascript:
   - javascripts/mathjax.js
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+  - https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js
+  - javascripts/mermaid-init.js
   - javascripts/cvpr2026-stats.js

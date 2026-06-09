@@ -2,6 +2,8 @@
 
 # 3D Geometry And Reconstruction
 
+<p class="blog-post-date">2026-06-08</p>
+
 The most useful 3D papers at CVPR 2026 were not just better reconstruction demos. They treated geometry as reusable memory. A model can look at images or video, build a state that stores depth, camera pose, material, or motion, and let later tasks query that state.
 
 That framing matters for geospatial AI and visual inspection because many decisions depend on scale, layout, material, pose, lighting, and physical consistency. A caption can say "window" or "roof." A useful vision system has to understand whether the glass is reflective, whether the camera pose is plausible, whether a measurement is metric, and whether a predicted structure stays stable across views.

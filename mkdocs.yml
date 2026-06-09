@@ -19,6 +19,9 @@ not_in_nav: |
 plugins:
   - search
 
+extra:
+  generator: false
+
 markdown_extensions:
   - admonition
   - attr_list

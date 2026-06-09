@@ -1,0 +1,11 @@
+[project]
+name = "elan-elan-github-io"
+version = "0.1.0"
+description = "Personal website and research blog for Elan Ding."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "mkdocs>=1.6,<2.0",
+    "mkdocs-simple-blog>=0.4,<0.5",
+    "pymdown-extensions>=10.0,<11.0",
+]

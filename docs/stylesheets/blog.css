@@ -16,6 +16,13 @@
   margin-top: 0.45rem;
 }
 
+.blog-post-date {
+  color: #65717f;
+  font-size: 0.86rem;
+  font-weight: 700;
+  margin: 0.2rem 0 1rem;
+}
+
 .cvpr-callout {
   border-left: 4px solid #4969a9;
   color: #2d3748;

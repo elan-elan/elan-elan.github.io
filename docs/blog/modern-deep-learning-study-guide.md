@@ -2,6 +2,8 @@
 
 # A Personal Study Guide To Modern Deep Learning
 
+<p class="blog-post-date">2026-06-08</p>
+
 This page condenses my CVPR 2026 study notes into one practical guide. It is not a survey of every paper. It is a way to rebuild the core ideas from small examples, then use the conference papers as anchors for the modern patterns that keep reappearing.
 
 The rule is simple: if I cannot explain a mechanism with a toy tensor shape, a tiny diagram, and a plain-language example, I do not understand it well enough to reuse it.

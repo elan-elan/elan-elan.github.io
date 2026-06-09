@@ -2,6 +2,8 @@
 
 # Diffusion, Mean Flow, And Training-Free Solvers
 
+<p class="blog-post-date">2026-06-08</p>
+
 The useful diffusion lesson from CVPR 2026 is not just better image synthesis. It is a broader view of generation as repair: start from a noisy, incomplete, or corrupted state, then move it toward a valid output.
 
 For structured outputs, that changes the question. Instead of asking whether one decoder must emit every token left-to-right, we can ask which parts should be drafted, corrupted, denoised, transported, verified, or repaired.

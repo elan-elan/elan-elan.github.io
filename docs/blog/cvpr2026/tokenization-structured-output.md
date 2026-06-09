@@ -2,6 +2,8 @@
 
 # Tokenization And Structured Output
 
+<p class="blog-post-date">2026-06-08</p>
+
 This is the most Aerial2Poly-native question in the report: what alphabet should geometry speak?
 
 Pix2Seq, Pix2Seq v2, Pix2Poly, and the local Aerial2Poly framework all share the same core move: turn visual structure into a parseable token language. The lineage matters, but it does not need to dominate this page. CVPR 2026 pushes the next question: once geometry already speaks in tokens, what alphabet, ordering policy, token budget, and topology backend make the language reliable?

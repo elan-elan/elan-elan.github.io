@@ -2,6 +2,8 @@
 
 # Geospatial Models And Active Perception
 
+<p class="blog-post-date">2026-06-08</p>
+
 The geospatial lesson from CVPR 2026 should stay calibrated. Foundation models are promising, but the MONTI/CVPR signal was not "big geospatial foundation models solve remote sensing." Smaller models and ImageNet-pretrained baselines can still be competitive in some remote-sensing settings, especially when the benchmark is narrow, labels are policy-shaped, or the output is a simple mask.
 
 The stronger mechanism is active perception: use a global view to decide where high-resolution evidence is worth spending compute, then use the right geospatial output form for the job. Sometimes that output is a polygon, but this batch argues for risk rasters, semantic occupancy, promptable masks, camera poses, and navigation decisions as neighboring structured layers.

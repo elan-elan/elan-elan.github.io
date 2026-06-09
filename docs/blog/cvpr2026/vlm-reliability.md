@@ -2,6 +2,8 @@
 
 # VLM Reliability And Foundation-Model Boosts
 
+<p class="blog-post-date">2026-06-08</p>
+
 The important VLM story is not whether every inspection system should fine-tune its own model. Closed-source frontier VLMs and strong open foundation models are the practical baseline now. The question is how to make them useful when the answer depends on visual evidence that is small, far away in time, domain-specific, or missing at the first resolution.
 
 This section therefore focuses on zero-shot, test-time, retrieval, acquisition, and data-engine techniques that boost a VLM or vision foundation model without pretending a fluent caption is enough. Fine-tuning appears only when it buys a transferable efficiency, material-recognition, or label-quality lesson.

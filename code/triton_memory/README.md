@@ -27,3 +27,15 @@ python code/triton_memory/scripts/cuda_verify_memory.py \
 ```
 
 Send back the generated JSON and Markdown files from `results/`; those are the source material for the final blog memory table.
+
+The `/path/to/...` values are placeholders. For real PEFT runs, each adapter argument must point to a directory created by `save_pretrained()` and containing `adapter_config.json`.
+
+To test the CUDA reporting pipeline before real adapters are available, run:
+
+```bash
+python code/triton_memory/scripts/cuda_verify_memory.py \
+  --device cuda:0 \
+  --synthetic-cuda \
+  --output-dir code/triton_memory/results \
+  --sample-nvidia-smi
+```

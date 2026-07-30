@@ -13,7 +13,22 @@ python scripts/cuda_verify_memory.py --mock --output-dir results
 
 Those commands validate the service shape, adapter locking, and result-writing pipeline on an Apple Silicon Mac. They do not prove the CUDA memory claim.
 
-Run the real memory verification on an NVIDIA CUDA machine:
+Run a PEFT LoRA memory verification on an NVIDIA CUDA machine without trained adapters by creating random adapters in memory:
+
+```bash
+python code/triton_memory/scripts/cuda_verify_memory.py \
+  --device cuda:0 \
+  --random-lora \
+  --base-model convnext_tiny.dinov3_lvd1689m \
+  --classes-a 5 \
+  --classes-b 12 \
+  --output-dir code/triton_memory/results \
+  --sample-nvidia-smi
+```
+
+Use `--no-pretrained` if the CUDA host should avoid downloading pretrained weights; memory behavior is still useful because the architecture and randomly initialized parameter tensors are the same size.
+
+Run the real memory verification with pre-saved adapter directories on an NVIDIA CUDA machine:
 
 ```bash
 python code/triton_memory/scripts/cuda_verify_memory.py \

@@ -19,8 +19,12 @@ if str(PROJECT_DIR) not in sys.path:
 from triton_memory.memory_report import CudaMemorySnapshot, capture_cuda_memory, format_markdown_table
 from triton_memory.mock_models import MockAdapterBackbone, MockHead, make_mock_inputs
 from triton_memory.model_loading import (
+    attach_first_random_lora_adapter,
+    attach_random_lora_adapter,
+    create_lora_config,
     create_linear_head,
     create_timm_backbone,
+    find_lora_target_module_names,
     load_additional_peft_adapter,
     load_first_peft_adapter,
     load_torch_module,
@@ -39,8 +43,14 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Run a CUDA allocator test with synthetic torch adapters instead of real PEFT adapter files.",
     )
+    parser.add_argument(
+        "--random-lora",
+        action="store_true",
+        help="Create random PEFT LoRA adapters in memory instead of loading adapter directories.",
+    )
     parser.add_argument("--device", default="cuda:0", help="CUDA device for the real verification path.")
     parser.add_argument("--base-model", default="convnext_tiny.dinov3_lvd1689m")
+    parser.add_argument("--no-pretrained", action="store_true", help="Create the timm backbone without downloading pretrained weights.")
     parser.add_argument("--adapter-a", type=Path)
     parser.add_argument("--adapter-b", type=Path)
     parser.add_argument("--head-a", type=Path)
@@ -50,6 +60,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--feature-dim", type=int, default=768)
     parser.add_argument("--toy-hidden-dim", type=int, default=4096)
     parser.add_argument("--toy-adapter-rank", type=int, default=16)
+    parser.add_argument("--lora-rank", type=int, default=8)
+    parser.add_argument("--lora-alpha", type=int, default=16)
+    parser.add_argument("--lora-target-limit", type=int, default=16)
+    parser.add_argument("--lora-target-kinds", default="linear,conv2d")
     parser.add_argument("--batch-size", type=int, default=2)
     parser.add_argument("--image-size", type=int, default=224)
     parser.add_argument("--output-dir", type=Path, default=PROJECT_DIR / "results")
@@ -66,6 +80,8 @@ def main() -> int:
             result = run_mock_verification(args)
         elif args.synthetic_cuda:
             result = run_synthetic_cuda_verification(args)
+        elif args.random_lora:
+            result = run_random_lora_cuda_verification(args)
         else:
             result = run_cuda_verification(args)
     except RuntimeError as exc:
@@ -120,7 +136,7 @@ def run_cuda_verification(args: argparse.Namespace) -> dict[str, Any]:
     snapshots.append(capture_cuda_memory("start after CUDA init", device=args.device, require_cuda=True))
     sample_smi_if_requested(args, smi_samples, "start")
 
-    base = create_timm_backbone(args.base_model, pretrained=True, num_classes=0).to(args.device).eval()
+    base = create_timm_backbone(args.base_model, pretrained=not args.no_pretrained, num_classes=0).to(args.device).eval()
     snapshots.append(capture_cuda_memory("one base backbone", device=args.device, require_cuda=True))
 
     shared = load_first_peft_adapter(base, args.adapter_a, adapter_name="task_a").to(args.device).eval()
@@ -160,7 +176,7 @@ def run_cuda_verification(args: argparse.Namespace) -> dict[str, Any]:
     torch.cuda.empty_cache()
     torch.cuda.reset_peak_memory_stats()
 
-    base_a = create_timm_backbone(args.base_model, pretrained=True, num_classes=0).to(args.device).eval()
+    base_a = create_timm_backbone(args.base_model, pretrained=not args.no_pretrained, num_classes=0).to(args.device).eval()
     model_a = load_first_peft_adapter(base_a, args.adapter_a, adapter_name="task_a").to(args.device).eval()
     _head_a = load_torch_module(args.head_a, device=args.device) if args.head_a else create_linear_head(
         feature_dim=args.feature_dim,
@@ -169,7 +185,7 @@ def run_cuda_verification(args: argparse.Namespace) -> dict[str, Any]:
     )
     snapshots.append(capture_cuda_memory("duplicated baseline model A", device=args.device, require_cuda=True))
 
-    base_b = create_timm_backbone(args.base_model, pretrained=True, num_classes=0).to(args.device).eval()
+    base_b = create_timm_backbone(args.base_model, pretrained=not args.no_pretrained, num_classes=0).to(args.device).eval()
     model_b = load_first_peft_adapter(base_b, args.adapter_b, adapter_name="task_b").to(args.device).eval()
     _head_b = load_torch_module(args.head_b, device=args.device) if args.head_b else create_linear_head(
         feature_dim=args.feature_dim,
@@ -198,6 +214,115 @@ def run_cuda_verification(args: argparse.Namespace) -> dict[str, Any]:
         "notes": [
             "Use memory_allocated for parameter-copy comparisons; reserved memory can remain high because of the PyTorch allocator.",
             "nvidia-smi samples are process-level corroboration, not the primary allocator metric.",
+        ],
+    }
+
+
+def run_random_lora_cuda_verification(args: argparse.Namespace) -> dict[str, Any]:
+    torch = require_cuda(args.device)
+    snapshots: list[CudaMemorySnapshot] = []
+    smi_samples: list[dict[str, str]] = []
+    target_kinds = parse_lora_target_kinds(args.lora_target_kinds)
+
+    reset_cuda(torch, args.device)
+    snapshots.append(capture_cuda_memory("random LoRA start after CUDA init", device=args.device, require_cuda=True))
+    sample_smi_if_requested(args, smi_samples, "random LoRA start")
+
+    base = create_timm_backbone(args.base_model, pretrained=not args.no_pretrained, num_classes=0).to(args.device).eval()
+    snapshots.append(capture_cuda_memory("random LoRA one base backbone", device=args.device, require_cuda=True))
+
+    target_modules = find_lora_target_module_names(
+        base,
+        torch_module=torch,
+        target_kinds=target_kinds,
+        target_limit=args.lora_target_limit,
+    )
+    lora_config = create_lora_config(
+        target_modules=target_modules,
+        rank=args.lora_rank,
+        alpha=args.lora_alpha,
+    )
+    shared = attach_first_random_lora_adapter(base, lora_config, adapter_name="task_a").to(args.device).eval()
+    snapshots.append(capture_cuda_memory("random LoRA shared + adapter A", device=args.device, require_cuda=True))
+
+    attach_random_lora_adapter(shared, lora_config, adapter_name="task_b")
+    snapshots.append(capture_cuda_memory("random LoRA shared + adapters A/B", device=args.device, require_cuda=True))
+
+    heads = {
+        "task_a": create_linear_head(feature_dim=args.feature_dim, num_classes=args.classes_a, device=args.device),
+        "task_b": create_linear_head(feature_dim=args.feature_dim, num_classes=args.classes_b, device=args.device),
+    }
+    service = SharedMultiAdapterService(shared, heads)
+    snapshots.append(capture_cuda_memory("random LoRA shared + adapters + heads", device=args.device, require_cuda=True))
+
+    inputs = torch.randn(
+        args.batch_size,
+        3,
+        args.image_size,
+        args.image_size,
+        device=args.device,
+        dtype=torch.float32,
+    )
+    service.infer_a(inputs)
+    snapshots.append(capture_cuda_memory("random LoRA warm-up task A", device=args.device, require_cuda=True))
+    service.infer_b(inputs)
+    snapshots.append(capture_cuda_memory("random LoRA warm-up task B", device=args.device, require_cuda=True))
+    sample_smi_if_requested(args, smi_samples, "random LoRA shared warm-up")
+
+    shared_allocated = snapshots[-1].allocated_mib
+    del service, heads, shared, base, inputs
+    gc.collect()
+    torch.cuda.empty_cache()
+    torch.cuda.reset_peak_memory_stats()
+
+    base_a = create_timm_backbone(args.base_model, pretrained=not args.no_pretrained, num_classes=0).to(args.device).eval()
+    target_modules_a = find_lora_target_module_names(
+        base_a,
+        torch_module=torch,
+        target_kinds=target_kinds,
+        target_limit=args.lora_target_limit,
+    )
+    lora_config_a = create_lora_config(target_modules=target_modules_a, rank=args.lora_rank, alpha=args.lora_alpha)
+    model_a = attach_first_random_lora_adapter(base_a, lora_config_a, adapter_name="task_a").to(args.device).eval()
+    _head_a = create_linear_head(feature_dim=args.feature_dim, num_classes=args.classes_a, device=args.device)
+    snapshots.append(capture_cuda_memory("random LoRA duplicated model A", device=args.device, require_cuda=True))
+
+    base_b = create_timm_backbone(args.base_model, pretrained=not args.no_pretrained, num_classes=0).to(args.device).eval()
+    target_modules_b = find_lora_target_module_names(
+        base_b,
+        torch_module=torch,
+        target_kinds=target_kinds,
+        target_limit=args.lora_target_limit,
+    )
+    lora_config_b = create_lora_config(target_modules=target_modules_b, rank=args.lora_rank, alpha=args.lora_alpha)
+    model_b = attach_first_random_lora_adapter(base_b, lora_config_b, adapter_name="task_b").to(args.device).eval()
+    _head_b = create_linear_head(feature_dim=args.feature_dim, num_classes=args.classes_b, device=args.device)
+    snapshots.append(capture_cuda_memory("random LoRA duplicated models A/B", device=args.device, require_cuda=True))
+    sample_smi_if_requested(args, smi_samples, "random LoRA duplicated baseline")
+
+    allocated_by_label = {snapshot.label: snapshot.allocated_mib for snapshot in snapshots}
+    deltas = {
+        "adapter_b_incremental_mib": allocated_by_label["random LoRA shared + adapters A/B"]
+        - allocated_by_label["random LoRA shared + adapter A"],
+        "duplicated_minus_shared_mib": allocated_by_label["random LoRA duplicated models A/B"] - shared_allocated,
+        "warmup_peak_mib": snapshots[-3].peak_mib,
+    }
+    keep_alive = (model_a, model_b, _head_a, _head_b)
+    if keep_alive is None:  # pragma: no cover - keeps variables live for measurement clarity
+        raise AssertionError("unreachable")
+
+    return {
+        "mode": "random-lora-cuda",
+        "created_at": now_iso(),
+        "environment": environment_metadata(cuda_required=True, torch_module=torch),
+        "arguments": serializable_args(args),
+        "lora_target_modules": target_modules,
+        "snapshots": [snapshot.as_dict() for snapshot in snapshots],
+        "deltas": deltas,
+        "nvidia_smi_samples": smi_samples,
+        "notes": [
+            "Random LoRA mode creates in-memory PEFT adapters and measures memory without trained adapter files.",
+            "The weights are random; use this for memory behavior, not model quality.",
         ],
     }
 
@@ -310,7 +435,7 @@ def require_real_inputs(args: argparse.Namespace) -> None:
         joined = ", ".join(f"--{name.replace('_', '-')}" for name in missing)
         raise RuntimeError(
             f"Real CUDA verification requires adapter paths: {joined}. "
-            "Use --synthetic-cuda to test the CUDA pipeline before real PEFT adapters are available."
+            "Use --random-lora to create random PEFT adapters in memory, or --synthetic-cuda for a non-PEFT smoke test."
         )
 
 
@@ -384,6 +509,18 @@ def sample_smi_if_requested(args: argparse.Namespace, samples: list[dict[str, st
         samples.append({"label": label, "error": str(exc)})
         return
     samples.append({"label": label, "output": completed.stdout.strip()})
+
+
+def parse_lora_target_kinds(value: str) -> tuple[str, ...]:
+    kinds = tuple(kind.strip().lower() for kind in value.split(",") if kind.strip())
+    allowed = {"linear", "conv2d"}
+    unknown = sorted(set(kinds) - allowed)
+    if unknown:
+        joined = ", ".join(unknown)
+        raise RuntimeError(f"Unknown LoRA target kind(s): {joined}. Expected linear, conv2d, or both.")
+    if not kinds:
+        raise RuntimeError("At least one LoRA target kind is required")
+    return kinds
 
 
 def write_outputs(result: dict[str, Any], output_dir: Path) -> tuple[Path, Path]:

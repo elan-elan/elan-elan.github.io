@@ -21,6 +21,68 @@ def create_timm_backbone(
     return timm.create_model(model_name, pretrained=pretrained, num_classes=num_classes)
 
 
+def find_lora_target_module_names(
+    model: Any,
+    *,
+    torch_module: Any,
+    target_kinds: tuple[str, ...] = ("linear", "conv2d"),
+    target_limit: int | None = 16,
+) -> list[str]:
+    target_kinds = tuple(kind.lower() for kind in target_kinds)
+    allowed_types = []
+    if "linear" in target_kinds:
+        allowed_types.append(torch_module.nn.Linear)
+    if "conv2d" in target_kinds:
+        allowed_types.append(torch_module.nn.Conv2d)
+    if not allowed_types:
+        raise RuntimeError("No LoRA target module kinds selected; use linear, conv2d, or both")
+
+    names: list[str] = []
+    for name, module in model.named_modules():
+        if not name:
+            continue
+        if isinstance(module, tuple(allowed_types)):
+            names.append(name)
+            if target_limit is not None and len(names) >= target_limit:
+                break
+    if not names:
+        joined = ", ".join(target_kinds)
+        raise RuntimeError(f"No modules matching LoRA target kinds found: {joined}")
+    return names
+
+
+def create_lora_config(*, target_modules: list[str], rank: int, alpha: int) -> Any:
+    try:
+        from peft import LoraConfig  # type: ignore
+    except Exception as exc:  # pragma: no cover - depends on CUDA host setup
+        raise RuntimeError("Install peft to create random LoRA adapters") from exc
+
+    return LoraConfig(
+        r=rank,
+        lora_alpha=alpha,
+        target_modules=target_modules,
+        lora_dropout=0.0,
+        bias="none",
+    )
+
+
+def attach_first_random_lora_adapter(base_model: Any, lora_config: Any, *, adapter_name: str) -> Any:
+    try:
+        from peft import get_peft_model  # type: ignore
+    except Exception as exc:  # pragma: no cover - depends on CUDA host setup
+        raise RuntimeError("Install peft to create random LoRA adapters") from exc
+
+    return get_peft_model(base_model, lora_config, adapter_name=adapter_name)
+
+
+def attach_random_lora_adapter(model: Any, lora_config: Any, *, adapter_name: str) -> Any:
+    add_adapter = getattr(model, "add_adapter", None)
+    if not callable(add_adapter):
+        raise TypeError("model does not provide add_adapter(); expected a PEFT model")
+    add_adapter(adapter_name, lora_config)
+    return model
+
+
 def load_first_peft_adapter(base_model: Any, adapter_path: str | Path, *, adapter_name: str) -> Any:
     validate_peft_adapter_path(adapter_path)
     try:
@@ -51,12 +113,12 @@ def validate_peft_adapter_path(adapter_path: str | Path) -> Path:
     if path_text.startswith("/path/to/"):
         raise RuntimeError(
             f"{path_text!r} is a placeholder. Pass a real PEFT adapter directory "
-            f"containing {ADAPTER_CONFIG!r}, or use --synthetic-cuda to test the CUDA pipeline first."
+            f"containing {ADAPTER_CONFIG!r}, or use --random-lora to create adapters in memory."
         )
     if not path.exists():
         raise RuntimeError(
             f"PEFT adapter path does not exist: {path}. Pass a local adapter directory "
-            f"containing {ADAPTER_CONFIG!r}, or use --synthetic-cuda to test the CUDA pipeline first."
+            f"containing {ADAPTER_CONFIG!r}, or use --random-lora to create adapters in memory."
         )
     if not path.is_dir():
         raise RuntimeError(f"PEFT adapter path must be a directory, got: {path}")

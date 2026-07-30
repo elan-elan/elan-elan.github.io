@@ -4,7 +4,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from triton_memory.model_loading import ADAPTER_CONFIG, validate_peft_adapter_path
+from triton_memory.model_loading import (
+    ADAPTER_CONFIG,
+    find_lora_target_module_names,
+    validate_peft_adapter_path,
+)
 
 
 class ModelLoadingTest(unittest.TestCase):
@@ -23,6 +27,27 @@ class ModelLoadingTest(unittest.TestCase):
             (path / ADAPTER_CONFIG).write_text("{}\n", encoding="utf-8")
 
             self.assertEqual(validate_peft_adapter_path(path), path)
+
+    def test_finds_lora_target_module_names(self) -> None:
+        try:
+            import torch
+        except Exception:
+            self.skipTest("torch is not installed")
+
+        model = torch.nn.Sequential(
+            torch.nn.Conv2d(3, 4, kernel_size=1),
+            torch.nn.Flatten(),
+            torch.nn.Linear(4, 2),
+        )
+
+        names = find_lora_target_module_names(
+            model,
+            torch_module=torch,
+            target_kinds=("linear", "conv2d"),
+            target_limit=None,
+        )
+
+        self.assertEqual(names, ["0", "2"])
 
 
 if __name__ == "__main__":

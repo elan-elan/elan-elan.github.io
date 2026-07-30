@@ -1,0 +1,148 @@
+{
+  "arguments": {
+    "adapter_a": null,
+    "adapter_b": null,
+    "base_model": "convnext_tiny.dinov3_lvd1689m",
+    "batch_size": 2,
+    "classes_a": 5,
+    "classes_b": 12,
+    "device": "cuda:0",
+    "feature_dim": 768,
+    "head_a": null,
+    "head_b": null,
+    "image_size": 224,
+    "lora_alpha": 16,
+    "lora_rank": 8,
+    "lora_target_kinds": "linear,conv2d",
+    "lora_target_limit": 16,
+    "mock": false,
+    "no_pretrained": true,
+    "output_dir": "code/triton_memory/results",
+    "random_lora": true,
+    "sample_nvidia_smi": true,
+    "synthetic_cuda": false,
+    "toy_adapter_rank": 16,
+    "toy_hidden_dim": 4096
+  },
+  "created_at": "2026-07-30T23:57:56.990692+00:00",
+  "deltas": {
+    "adapter_b_incremental_mib": 0.37939453125,
+    "duplicated_minus_shared_mib": 103.88330078125,
+    "warmup_peak_mib": 153.78662109375
+  },
+  "environment": {
+    "cuda_available": true,
+    "gpu_name": "Tesla T4",
+    "gpu_total_memory_mib": 14912.6875,
+    "numpy": "2.2.6",
+    "peft": "0.20.0",
+    "platform": "Linux-6.14.0-1016-aws-x86_64-with-glibc2.39",
+    "python": "3.10.19 (main, Oct 21 2025, 16:43:05) [GCC 11.2.0]",
+    "pytriton": null,
+    "timm": "1.0.26",
+    "torch": "2.11.0+cu130",
+    "torch_cuda": "13.0"
+  },
+  "lora_target_modules": [
+    "stem.0",
+    "stages.0.blocks.0.mlp.fc1",
+    "stages.0.blocks.0.mlp.fc2",
+    "stages.0.blocks.1.mlp.fc1",
+    "stages.0.blocks.1.mlp.fc2",
+    "stages.0.blocks.2.mlp.fc1",
+    "stages.0.blocks.2.mlp.fc2",
+    "stages.1.downsample.1",
+    "stages.1.blocks.0.mlp.fc1",
+    "stages.1.blocks.0.mlp.fc2",
+    "stages.1.blocks.1.mlp.fc1",
+    "stages.1.blocks.1.mlp.fc2",
+    "stages.1.blocks.2.mlp.fc1",
+    "stages.1.blocks.2.mlp.fc2",
+    "stages.2.downsample.1",
+    "stages.2.blocks.0.mlp.fc1"
+  ],
+  "mode": "random-lora-cuda",
+  "notes": [
+    "Random LoRA mode creates in-memory PEFT adapters and measures memory without trained adapter files.",
+    "The weights are random; use this for memory behavior, not model quality."
+  ],
+  "nvidia_smi_samples": [
+    {
+      "label": "random LoRA start",
+      "output": "3258180, 102"
+    },
+    {
+      "label": "random LoRA shared warm-up",
+      "output": "3258180, 302"
+    },
+    {
+      "label": "random LoRA duplicated baseline",
+      "output": "3258180, 384"
+    }
+  ],
+  "snapshots": [
+    {
+      "allocated_mib": 0.0,
+      "label": "random LoRA start after CUDA init",
+      "note": "",
+      "peak_mib": 0.0,
+      "reserved_mib": 0.0
+    },
+    {
+      "allocated_mib": 107.00830078125,
+      "label": "random LoRA one base backbone",
+      "note": "",
+      "peak_mib": 107.00830078125,
+      "reserved_mib": 128.0
+    },
+    {
+      "allocated_mib": 107.3876953125,
+      "label": "random LoRA shared + adapter A",
+      "note": "",
+      "peak_mib": 107.3876953125,
+      "reserved_mib": 128.0
+    },
+    {
+      "allocated_mib": 107.76708984375,
+      "label": "random LoRA shared + adapters A/B",
+      "note": "",
+      "peak_mib": 107.76708984375,
+      "reserved_mib": 128.0
+    },
+    {
+      "allocated_mib": 107.81787109375,
+      "label": "random LoRA shared + adapters + heads",
+      "note": "",
+      "peak_mib": 107.81787109375,
+      "reserved_mib": 128.0
+    },
+    {
+      "allocated_mib": 118.94287109375,
+      "label": "random LoRA warm-up task A",
+      "note": "",
+      "peak_mib": 153.78662109375,
+      "reserved_mib": 172.0
+    },
+    {
+      "allocated_mib": 118.94287109375,
+      "label": "random LoRA warm-up task B",
+      "note": "",
+      "peak_mib": 153.78662109375,
+      "reserved_mib": 172.0
+    },
+    {
+      "allocated_mib": 115.84033203125,
+      "label": "random LoRA duplicated model A",
+      "note": "",
+      "peak_mib": 115.84033203125,
+      "reserved_mib": 128.0
+    },
+    {
+      "allocated_mib": 222.826171875,
+      "label": "random LoRA duplicated models A/B",
+      "note": "",
+      "peak_mib": 222.826171875,
+      "reserved_mib": 254.0
+    }
+  ]
+}

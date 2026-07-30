@@ -41,7 +41,10 @@ def find_lora_target_module_names(
     for name, module in model.named_modules():
         if not name:
             continue
-        if isinstance(module, tuple(allowed_types)):
+        if isinstance(module, tuple(allowed_types)) and _is_supported_lora_target(
+            module,
+            torch_module=torch_module,
+        ):
             names.append(name)
             if target_limit is not None and len(names) >= target_limit:
                 break
@@ -49,6 +52,12 @@ def find_lora_target_module_names(
         joined = ", ".join(target_kinds)
         raise RuntimeError(f"No modules matching LoRA target kinds found: {joined}")
     return names
+
+
+def _is_supported_lora_target(module: Any, *, torch_module: Any) -> bool:
+    if isinstance(module, torch_module.nn.Conv2d):
+        return int(getattr(module, "groups", 1)) == 1
+    return True
 
 
 def create_lora_config(*, target_modules: list[str], rank: int, alpha: int) -> Any:

@@ -87,6 +87,9 @@ def main() -> int:
     except RuntimeError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
+    except Exception as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
 
     json_path, markdown_path = write_outputs(result, args.output_dir)
     print(f"Wrote JSON: {json_path}")

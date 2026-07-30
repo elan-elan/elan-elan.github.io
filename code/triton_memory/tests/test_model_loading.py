@@ -49,6 +49,28 @@ class ModelLoadingTest(unittest.TestCase):
 
         self.assertEqual(names, ["0", "2"])
 
+    def test_skips_grouped_conv2d_lora_targets(self) -> None:
+        try:
+            import torch
+        except Exception:
+            self.skipTest("torch is not installed")
+
+        model = torch.nn.Sequential(
+            torch.nn.Conv2d(4, 4, kernel_size=3, groups=4),
+            torch.nn.Conv2d(4, 8, kernel_size=1, groups=1),
+            torch.nn.Flatten(),
+            torch.nn.Linear(8, 2),
+        )
+
+        names = find_lora_target_module_names(
+            model,
+            torch_module=torch,
+            target_kinds=("linear", "conv2d"),
+            target_limit=None,
+        )
+
+        self.assertEqual(names, ["1", "3"])
+
 
 if __name__ == "__main__":
     unittest.main()

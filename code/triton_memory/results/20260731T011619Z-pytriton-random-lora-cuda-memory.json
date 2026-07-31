@@ -1,0 +1,211 @@
+{
+    "arguments": {
+        "base_model": "convnext_tiny.dinov3_lvd1689m",
+        "batch_size": 2,
+        "classes_a": 5,
+        "classes_b": 12,
+        "device": "cuda:0",
+        "feature_dim": 768,
+        "image_size": 224,
+        "lora_alpha": 16,
+        "lora_rank": 8,
+        "lora_target_kinds": "linear,conv2d",
+        "lora_target_limit": 16,
+        "mock": false,
+        "no_pretrained": true,
+        "output_dir": "code/triton_memory/results",
+        "pytriton_client_protocol": "grpc",
+        "pytriton_client_timeout_seconds": 300.0,
+        "pytriton_grpc_port": 8201,
+        "pytriton_http_port": 8200,
+        "pytriton_metrics_port": 8202,
+        "pytriton_model_a": "TaskA",
+        "pytriton_model_b": "TaskB",
+        "pytriton_settle_seconds": 2.0,
+        "random_lora": true,
+        "sample_nvidia_smi": true
+    },
+    "created_at": "2026-07-31T01:16:19.523075+00:00",
+    "deltas": {
+        "pytriton_duplicated_minus_shared_mib": 106.50830078125,
+        "pytriton_shared_endpoint_overhead_mib": 0.0,
+        "pytriton_shared_warmup_peak_mib": 124.06787109375
+    },
+    "duplicated_lora_target_modules": {
+        "task_a": [
+            "stem.0",
+            "stages.0.blocks.0.mlp.fc1",
+            "stages.0.blocks.0.mlp.fc2",
+            "stages.0.blocks.1.mlp.fc1",
+            "stages.0.blocks.1.mlp.fc2",
+            "stages.0.blocks.2.mlp.fc1",
+            "stages.0.blocks.2.mlp.fc2",
+            "stages.1.downsample.1",
+            "stages.1.blocks.0.mlp.fc1",
+            "stages.1.blocks.0.mlp.fc2",
+            "stages.1.blocks.1.mlp.fc1",
+            "stages.1.blocks.1.mlp.fc2",
+            "stages.1.blocks.2.mlp.fc1",
+            "stages.1.blocks.2.mlp.fc2",
+            "stages.2.downsample.1",
+            "stages.2.blocks.0.mlp.fc1"
+        ],
+        "task_b": [
+            "stem.0",
+            "stages.0.blocks.0.mlp.fc1",
+            "stages.0.blocks.0.mlp.fc2",
+            "stages.0.blocks.1.mlp.fc1",
+            "stages.0.blocks.1.mlp.fc2",
+            "stages.0.blocks.2.mlp.fc1",
+            "stages.0.blocks.2.mlp.fc2",
+            "stages.1.downsample.1",
+            "stages.1.blocks.0.mlp.fc1",
+            "stages.1.blocks.0.mlp.fc2",
+            "stages.1.blocks.1.mlp.fc1",
+            "stages.1.blocks.1.mlp.fc2",
+            "stages.1.blocks.2.mlp.fc1",
+            "stages.1.blocks.2.mlp.fc2",
+            "stages.2.downsample.1",
+            "stages.2.blocks.0.mlp.fc1"
+        ]
+    },
+    "environment": {
+        "cuda_available": true,
+        "gpu_name": "Tesla T4",
+        "gpu_total_memory_mib": 14912.6875,
+        "numpy": "1.26.4",
+        "peft": "0.20.0",
+        "platform": "Linux-6.14.0-1016-aws-x86_64-with-glibc2.35",
+        "python": "3.10.12 (main, Sep 11 2024, 15:47:36) [GCC 11.4.0]",
+        "pytriton": "0.7.0",
+        "timm": "1.0.28",
+        "torch": "2.6.0+cu124",
+        "torch_cuda": "12.4"
+    },
+    "lora_target_modules": [
+        "stem.0",
+        "stages.0.blocks.0.mlp.fc1",
+        "stages.0.blocks.0.mlp.fc2",
+        "stages.0.blocks.1.mlp.fc1",
+        "stages.0.blocks.1.mlp.fc2",
+        "stages.0.blocks.2.mlp.fc1",
+        "stages.0.blocks.2.mlp.fc2",
+        "stages.1.downsample.1",
+        "stages.1.blocks.0.mlp.fc1",
+        "stages.1.blocks.0.mlp.fc2",
+        "stages.1.blocks.1.mlp.fc1",
+        "stages.1.blocks.1.mlp.fc2",
+        "stages.1.blocks.2.mlp.fc1",
+        "stages.1.blocks.2.mlp.fc2",
+        "stages.2.downsample.1",
+        "stages.2.blocks.0.mlp.fc1"
+    ],
+    "mode": "pytriton-random-lora-cuda",
+    "notes": [
+        "This mode starts real PyTriton endpoints and warms both endpoints through PyTriton ModelClient.",
+        "The shared path binds two endpoint names to one service object and one CUDA-resident backbone.",
+        "The duplicated baseline binds two endpoint names backed by two independently constructed CUDA-resident backbones.",
+        "Random LoRA weights validate memory behavior, not prediction quality."
+    ],
+    "nvidia_smi_samples": [
+        {
+            "label": "pytriton start",
+            "output": "1, 102"
+        },
+        {
+            "label": "pytriton shared endpoints active",
+            "output": "1, 230\n134, 166"
+        },
+        {
+            "label": "pytriton shared warm-up",
+            "output": "1, 332\n134, 166"
+        },
+        {
+            "label": "pytriton duplicated endpoints active",
+            "output": "1, 394\n569, 166"
+        },
+        {
+            "label": "pytriton duplicated warm-up",
+            "output": "1, 438\n569, 166"
+        }
+    ],
+    "snapshots": [
+        {
+            "allocated_mib": 0.0,
+            "label": "pytriton start after CUDA init",
+            "note": "",
+            "peak_mib": 0.0,
+            "reserved_mib": 0.0
+        },
+        {
+            "allocated_mib": 107.81787109375,
+            "label": "pytriton shared service ready",
+            "note": "",
+            "peak_mib": 107.81787109375,
+            "reserved_mib": 128.0
+        },
+        {
+            "allocated_mib": 107.81787109375,
+            "label": "pytriton shared endpoints bound",
+            "note": "",
+            "peak_mib": 107.81787109375,
+            "reserved_mib": 128.0
+        },
+        {
+            "allocated_mib": 107.81787109375,
+            "label": "pytriton shared endpoints active",
+            "note": "",
+            "peak_mib": 107.81787109375,
+            "reserved_mib": 128.0
+        },
+        {
+            "allocated_mib": 115.94287109375,
+            "label": "pytriton shared warm-up task A",
+            "note": "",
+            "peak_mib": 152.78662109375,
+            "reserved_mib": 172.0
+        },
+        {
+            "allocated_mib": 124.06787109375,
+            "label": "pytriton shared warm-up task B",
+            "note": "",
+            "peak_mib": 160.91162109375,
+            "reserved_mib": 192.0
+        },
+        {
+            "allocated_mib": 230.576171875,
+            "label": "pytriton duplicated services ready",
+            "note": "",
+            "peak_mib": 230.576171875,
+            "reserved_mib": 254.0
+        },
+        {
+            "allocated_mib": 230.576171875,
+            "label": "pytriton duplicated endpoints bound",
+            "note": "",
+            "peak_mib": 230.576171875,
+            "reserved_mib": 254.0
+        },
+        {
+            "allocated_mib": 230.576171875,
+            "label": "pytriton duplicated endpoints active",
+            "note": "",
+            "peak_mib": 230.576171875,
+            "reserved_mib": 254.0
+        },
+        {
+            "allocated_mib": 230.576171875,
+            "label": "pytriton duplicated warm-up task A",
+            "note": "",
+            "peak_mib": 267.029296875,
+            "reserved_mib": 298.0
+        },
+        {
+            "allocated_mib": 230.576171875,
+            "label": "pytriton duplicated warm-up task B",
+            "note": "",
+            "peak_mib": 267.029296875,
+            "reserved_mib": 298.0
+        }
+    ]
+}

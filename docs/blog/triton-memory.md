@@ -202,9 +202,11 @@ docker run --rm \
         --pytriton-client-timeout-seconds 300
 ```
 
-The script writes JSON and Markdown summaries under `code/triton_memory/results/`. The table below was copied from one of those generated summaries.
+The script writes JSON and Markdown summaries under `code/triton_memory/results/`. The raw JSON for this run is checked in as [`20260731T011619Z-pytriton-random-lora-cuda-memory.json`](https://github.com/elan-elan/elan-elan.github.io/blob/triton-test/code/triton_memory/results/20260731T011619Z-pytriton-random-lora-cuda-memory.json).
 
 The run used a Tesla T4 with PyTriton `0.7.0`, PyTorch `2.6.0+cu124`, PEFT `0.20.0`, timm `1.0.28`, and CUDA `12.4`.
+
+The recorded configuration used batch size `2`, image size `224`, feature dimension `768`, LoRA rank `8`, LoRA alpha `16`, and `16` selected LoRA target modules from ConvNeXt. The selected targets were the stem convolution, early MLP `fc1`/`fc2` layers, and early downsample convolutions; the full module list is in the JSON.
 
 ## Result
 
@@ -230,7 +232,17 @@ Put another way:
 | Savings vs duplicated baseline | 46.2% |
 | Duplicated/shared ratio | 1.86x |
 
-The `nvidia-smi` process samples pointed in the same direction. After the shared warm-up, the Python process plus Triton backend process summed to about `498 MiB` (`332 + 166`). After the duplicated warm-up, they summed to about `604 MiB` (`438 + 166`). That process-level difference is also `106 MiB`, but the absolute number is different from `torch.cuda.memory_allocated()` because `nvidia-smi` sees the whole process, CUDA context, and Triton backend, not only live tensors tracked by the PyTorch allocator.
+The `nvidia-smi` process samples pointed in the same direction:
+
+| `nvidia-smi` checkpoint | Python process MiB | Triton backend MiB | Total MiB |
+| --- | ---: | ---: | ---: |
+| PyTriton start | 102 | - | 102 |
+| Shared endpoints active | 230 | 166 | 396 |
+| Shared after warm-up | 332 | 166 | 498 |
+| Duplicated endpoints active | 394 | 166 | 560 |
+| Duplicated after warm-up | 438 | 166 | 604 |
+
+After the shared warm-up, the Python process plus Triton backend process summed to about `498 MiB` (`332 + 166`). After the duplicated warm-up, they summed to about `604 MiB` (`438 + 166`). That process-level difference is also `106 MiB`, but the absolute number is different from `torch.cuda.memory_allocated()` because `nvidia-smi` sees the whole process, CUDA context, and Triton backend, not only live tensors tracked by the PyTorch allocator.
 
 ## How To Read The Numbers
 

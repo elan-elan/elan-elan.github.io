@@ -24,7 +24,7 @@ This post walks through the pattern with small code examples, then shows the CUD
 
 ## The Deployment Shape
 
-The service owns one backbone and a small task table. Each task names the adapter and head it should use.
+The service owns one backbone and a small task table. Each task names the adapter and head it should use. The full version of this service lives in [`shared_service.py`](https://github.com/elan-elan/elan-elan.github.io/blob/main/code/triton_memory/triton_memory/shared_service.py).
 
 ```python
 from dataclasses import dataclass
@@ -42,18 +42,7 @@ tasks = {
 }
 ```
 
-The important part is that the backbone is passed in once:
-
-```python
-service = SharedMultiAdapterService(
-    backbone=shared_peft_model,
-    heads={
-        "task_a": task_a_head,
-        "task_b": task_b_head,
-    },
-    tasks=tasks,
-)
-```
+That task table is passed into the service after the shared PEFT model and task heads are created below.
 
 Both endpoints should call methods on this same `service` object. They should not each build their own backbone.
 
@@ -92,7 +81,7 @@ This is not clever. That is the point. The service makes object sharing explicit
 
 ## What PyTriton Adds
 
-PyTriton gives the service two model endpoints. The endpoints can still point back to the same service instance:
+PyTriton gives the service two model endpoints. The endpoints can still point back to the same service instance. The real script binds these methods with `Triton.bind()` in [`cuda_verify_memory.py`](https://github.com/elan-elan/elan-elan.github.io/blob/main/code/triton_memory/scripts/cuda_verify_memory.py).
 
 ```python
 from pytriton.decorators import batch
@@ -117,9 +106,16 @@ The exact `Triton.bind()` code depends on the input and output tensor contracts,
 
 For memory testing, the adapters do not need to be trained. Random LoRA adapters are enough because the question is parameter memory, not prediction quality.
 
-The test harness creates a timm backbone, finds supported LoRA targets, and attaches two in-memory PEFT adapters:
+The test harness creates a timm backbone, finds supported LoRA targets, and attaches two in-memory PEFT adapters. The target-selection helper is defined in [`model_loading.py`](https://github.com/elan-elan/elan-elan.github.io/blob/main/code/triton_memory/triton_memory/model_loading.py), and the final lines reuse the `tasks` table and `SharedMultiAdapterService` class defined above.
 
 ```python
+import timm
+import torch
+from peft import LoraConfig, get_peft_model
+
+from triton_memory.model_loading import find_lora_target_module_names
+
+
 base = timm.create_model(
     "convnext_tiny.dinov3_lvd1689m",
     pretrained=False,
@@ -143,20 +139,32 @@ lora_config = LoraConfig(
 
 shared = get_peft_model(base, lora_config, adapter_name="task_a")
 shared.add_adapter("task_b", lora_config)
+
+task_a_head = torch.nn.Linear(768, 5).to("cuda:0").eval()
+task_b_head = torch.nn.Linear(768, 12).to("cuda:0").eval()
+
+service = SharedMultiAdapterService(
+    backbone=shared,
+    heads={
+        "task_a": task_a_head,
+        "task_b": task_b_head,
+    },
+    tasks=tasks,
+)
 ```
 
 One practical detail matters for ConvNeXt: depthwise/grouped `Conv2d` layers are skipped. PEFT supports LoRA on grouped convolutions only when the rank is compatible with the group count, and ConvNeXt has layers such as `groups=96`. Skipping grouped convolutions keeps the memory test focused and avoids a target-selection error.
 
 ## The CUDA Test
 
-The [measurement script](https://github.com/elan-elan/elan-elan.github.io/blob/triton-test/code/triton_memory/scripts/cuda_verify_memory.py) starts a real PyTriton server and compares two paths:
+The [measurement script](https://github.com/elan-elan/elan-elan.github.io/blob/main/code/triton_memory/scripts/cuda_verify_memory.py) starts a real PyTriton server and compares two paths:
 
 - **Shared path:** `TaskA` and `TaskB` are two PyTriton model names bound to one service object, one CUDA-resident backbone, two random LoRA adapters, and two heads.
 - **Duplicated path:** `TaskA` and `TaskB` are two PyTriton model names backed by two independently constructed CUDA-resident backbones.
 
 Both endpoints are warmed through `pytriton.client.ModelClient`, so the result is a serving-path measurement rather than a direct eager-mode call.
 
-The most reproducible way to run it is inside NVIDIA's Triton Server container. The [Dockerfile](https://github.com/elan-elan/elan-elan.github.io/blob/triton-test/code/triton_memory/docker/Dockerfile.cuda) starts from `nvcr.io/nvidia/tritonserver:24.10-py3`, then installs PyTorch, timm, PEFT, and PyTriton.
+The most reproducible way to run it is inside NVIDIA's Triton Server container. The [Dockerfile](https://github.com/elan-elan/elan-elan.github.io/blob/main/code/triton_memory/docker/Dockerfile.cuda) starts from `nvcr.io/nvidia/tritonserver:24.10-py3`, then installs PyTorch, timm, PEFT, and PyTriton.
 
 If this is a fresh CUDA host, first check that Docker can see the GPU:
 
@@ -202,7 +210,7 @@ docker run --rm \
         --pytriton-client-timeout-seconds 300
 ```
 
-The script writes JSON and Markdown summaries under `code/triton_memory/results/`. The raw JSON for this run is checked in as [`20260731T011619Z-pytriton-random-lora-cuda-memory.json`](https://github.com/elan-elan/elan-elan.github.io/blob/triton-test/code/triton_memory/results/20260731T011619Z-pytriton-random-lora-cuda-memory.json).
+The script writes JSON and Markdown summaries under `code/triton_memory/results/`. The raw JSON for this run is checked in as [`20260731T011619Z-pytriton-random-lora-cuda-memory.json`](https://github.com/elan-elan/elan-elan.github.io/blob/main/code/triton_memory/results/20260731T011619Z-pytriton-random-lora-cuda-memory.json).
 
 The run used a Tesla T4 with PyTriton `0.7.0`, PyTorch `2.6.0+cu124`, PEFT `0.20.0`, timm `1.0.28`, and CUDA `12.4`.
 
@@ -279,4 +287,4 @@ many PyTriton endpoints
 
 That pattern keeps deployment simple and makes GPU memory scale with adapters and heads instead of with repeated backbone copies.
 
-The supporting code lives in the [`code/triton_memory`](https://github.com/elan-elan/elan-elan.github.io/tree/triton-test/code/triton_memory) directory. The two most relevant files are the [measurement script](https://github.com/elan-elan/elan-elan.github.io/blob/triton-test/code/triton_memory/scripts/cuda_verify_memory.py) and the [CUDA Dockerfile](https://github.com/elan-elan/elan-elan.github.io/blob/triton-test/code/triton_memory/docker/Dockerfile.cuda).
+The supporting code lives in the [`code/triton_memory`](https://github.com/elan-elan/elan-elan.github.io/tree/main/code/triton_memory) directory. The most relevant files are the [measurement script](https://github.com/elan-elan/elan-elan.github.io/blob/main/code/triton_memory/scripts/cuda_verify_memory.py), the [shared service](https://github.com/elan-elan/elan-elan.github.io/blob/main/code/triton_memory/triton_memory/shared_service.py), the [model-loading helpers](https://github.com/elan-elan/elan-elan.github.io/blob/main/code/triton_memory/triton_memory/model_loading.py), and the [CUDA Dockerfile](https://github.com/elan-elan/elan-elan.github.io/blob/main/code/triton_memory/docker/Dockerfile.cuda).

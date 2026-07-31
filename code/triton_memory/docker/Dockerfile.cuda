@@ -1,0 +1,11 @@
+ARG TRITON_IMAGE=nvcr.io/nvidia/tritonserver:24.10-py3
+FROM ${TRITON_IMAGE}
+
+ENV PIP_NO_CACHE_DIR=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /workspace
+
+RUN python3 -m pip install --upgrade pip setuptools wheel
+RUN python3 -m pip install --index-url https://download.pytorch.org/whl/cu124 torch torchvision
+RUN python3 -m pip install numpy pytest timm peft nvidia-pytriton

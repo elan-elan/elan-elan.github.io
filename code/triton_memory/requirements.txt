@@ -1,0 +1,8 @@
+numpy>=2.0
+pytest>=8.0
+
+# CUDA verification extras for an NVIDIA GPU host:
+# torch
+# timm
+# peft
+# pytriton

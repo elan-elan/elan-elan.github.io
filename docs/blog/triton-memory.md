@@ -272,6 +272,8 @@ The run measures an active PyTriton serving path, but it is still a small contro
 
 The shared-backbone pattern is mainly a memory optimization, not a guaranteed speed optimization. With LoRA, the adapter changes computations inside the backbone, so task A and task B generally cannot share one cached backbone output and then apply different adapters afterward. Because `set_adapter()` changes active model state, a shared service usually protects adapter switching with a lock; if two different adapters must run truly in parallel and latency matters more than memory, separate model instances are usually the cleaner deployment shape.
 
+Batching changes that tradeoff. If many independent requests arrive over time, the service can group requests by adapter, run a larger batch for task A, switch adapters, then run a larger batch for task B. That is still serialized by adapter group, but it can keep the GPU busier while preserving the memory benefit of one shared backbone. In practice, this means the shared approach can be a good throughput design when the inference graph is adapter-aware; it is less attractive when one user request needs task A and task B to finish in parallel with minimum latency.
+
 The exact MiB values will change with the backbone, adapter rank, target modules, batch size, dtype, GPU, PyTorch version, and allocator state. The durable lesson is the shape of the comparison: one shared backbone plus small adapters is much cheaper than one full backbone per endpoint.
 
 ## Takeaway

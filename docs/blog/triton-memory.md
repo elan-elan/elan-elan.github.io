@@ -270,6 +270,8 @@ This test used random LoRA adapters and `pretrained=False`. That is fine for mem
 
 The run measures an active PyTriton serving path, but it is still a small controlled memory test. It is not a throughput or latency benchmark.
 
+The shared-backbone pattern is mainly a memory optimization, not a guaranteed speed optimization. With LoRA, the adapter changes computations inside the backbone, so task A and task B generally cannot share one cached backbone output and then apply different adapters afterward. Because `set_adapter()` changes active model state, a shared service usually protects adapter switching with a lock; if two different adapters must run truly in parallel and latency matters more than memory, separate model instances are usually the cleaner deployment shape.
+
 The exact MiB values will change with the backbone, adapter rank, target modules, batch size, dtype, GPU, PyTorch version, and allocator state. The durable lesson is the shape of the comparison: one shared backbone plus small adapters is much cheaper than one full backbone per endpoint.
 
 ## Takeaway

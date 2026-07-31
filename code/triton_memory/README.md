@@ -36,6 +36,52 @@ Both endpoints are warmed through `pytriton.client.ModelClient`, so the resultin
 
 Send back the generated JSON and Markdown files from `results/`; those are the source material for the final blog memory table.
 
+## Docker on a CUDA Host
+
+The most reliable setup is to run inside NVIDIA's Triton Server container so the Triton Python backend, CUDA runtime, and shared `libpython` library line up.
+
+Build the image from the repository root on the CUDA host:
+
+```bash
+docker build \
+  -f code/triton_memory/docker/Dockerfile.cuda \
+  -t triton-memory:24.10 \
+  code/triton_memory
+```
+
+Run the active PyTriton verification in the container:
+
+```bash
+docker run --rm \
+  --gpus all \
+  --ipc=host \
+  --shm-size=8g \
+  -v "$PWD":/workspace \
+  -w /workspace \
+  -p 8200:8200 \
+  -p 8201:8201 \
+  -p 8202:8202 \
+  triton-memory:24.10 \
+  python3 code/triton_memory/scripts/cuda_verify_memory.py \
+    --device cuda:0 \
+    --random-lora \
+    --no-pretrained \
+    --base-model convnext_tiny.dinov3_lvd1689m \
+    --classes-a 5 \
+    --classes-b 12 \
+    --output-dir code/triton_memory/results \
+    --sample-nvidia-smi \
+    --pytriton-http-port 8200 \
+    --pytriton-grpc-port 8201 \
+    --pytriton-metrics-port 8202
+```
+
+If Docker cannot see the GPU, install or fix the NVIDIA Container Toolkit on the host and verify this command first:
+
+```bash
+docker run --rm --gpus all nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04 nvidia-smi
+```
+
 If the default PyTriton ports are busy, override them:
 
 ```bash

@@ -13,12 +13,13 @@ python scripts/cuda_verify_memory.py --mock --output-dir results
 
 Those commands validate the service shape, adapter locking, and result-writing pipeline on an Apple Silicon Mac. They do not prove the CUDA memory claim.
 
-Run a PEFT LoRA memory verification on an NVIDIA CUDA machine without trained adapters by creating random adapters in memory:
+Run the active PyTriton memory verification on an NVIDIA CUDA machine without trained adapters by creating random adapters in memory:
 
 ```bash
 python code/triton_memory/scripts/cuda_verify_memory.py \
   --device cuda:0 \
   --random-lora \
+  --no-pretrained \
   --base-model convnext_tiny.dinov3_lvd1689m \
   --classes-a 5 \
   --classes-b 12 \
@@ -26,31 +27,25 @@ python code/triton_memory/scripts/cuda_verify_memory.py \
   --sample-nvidia-smi
 ```
 
-Use `--no-pretrained` if the CUDA host should avoid downloading pretrained weights; memory behavior is still useful because the architecture and randomly initialized parameter tensors are the same size.
+This command starts real PyTriton endpoints twice:
 
-Run the real memory verification with pre-saved adapter directories on an NVIDIA CUDA machine:
+1. `TaskA` and `TaskB` bound to one shared CUDA-resident backbone with two random LoRA adapters.
+2. `TaskA` and `TaskB` bound to two independently constructed CUDA-resident backbones.
 
-```bash
-python code/triton_memory/scripts/cuda_verify_memory.py \
-  --device cuda:0 \
-  --base-model convnext_tiny.dinov3_lvd1689m \
-  --adapter-a /path/to/adapter_a \
-  --adapter-b /path/to/adapter_b \
-  --classes-a 5 \
-  --classes-b 12 \
-  --output-dir code/triton_memory/results
-```
+Both endpoints are warmed through `pytriton.client.ModelClient`, so the resulting table is about served endpoints rather than eager PyTorch calls. Random LoRA weights validate memory behavior, not prediction quality. Use `--no-pretrained` if the CUDA host should avoid downloading pretrained weights; memory behavior is still useful because the architecture and randomly initialized parameter tensors are the same size.
 
 Send back the generated JSON and Markdown files from `results/`; those are the source material for the final blog memory table.
 
-The `/path/to/...` values are placeholders. For real PEFT runs, each adapter argument must point to a directory created by `save_pretrained()` and containing `adapter_config.json`.
-
-To test the CUDA reporting pipeline before real adapters are available, run:
+If the default PyTriton ports are busy, override them:
 
 ```bash
 python code/triton_memory/scripts/cuda_verify_memory.py \
   --device cuda:0 \
-  --synthetic-cuda \
+  --random-lora \
+  --no-pretrained \
+  --pytriton-http-port 8200 \
+  --pytriton-grpc-port 8201 \
+  --pytriton-metrics-port 8202 \
   --output-dir code/triton_memory/results \
   --sample-nvidia-smi
 ```

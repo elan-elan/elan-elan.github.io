@@ -73,7 +73,9 @@ docker run --rm \
     --sample-nvidia-smi \
     --pytriton-http-port 8200 \
     --pytriton-grpc-port 8201 \
-    --pytriton-metrics-port 8202
+    --pytriton-metrics-port 8202 \
+    --pytriton-client-protocol grpc \
+    --pytriton-client-timeout-seconds 300
 ```
 
 If Docker cannot see the GPU, install or fix the NVIDIA Container Toolkit on the host and verify this command first:

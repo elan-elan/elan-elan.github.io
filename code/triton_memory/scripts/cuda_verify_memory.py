@@ -8,7 +8,6 @@ import json
 import platform
 import subprocess
 import sys
-import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -63,6 +62,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--pytriton-model-a", default="TaskA")
     parser.add_argument("--pytriton-model-b", default="TaskB")
     parser.add_argument("--pytriton-settle-seconds", type=float, default=2.0)
+    parser.add_argument("--pytriton-client-protocol", choices=("grpc", "http"), default="grpc")
+    parser.add_argument("--pytriton-client-timeout-seconds", type=float, default=300.0)
     return parser.parse_args()
 
 
@@ -142,6 +143,8 @@ def run_pytriton_random_lora_cuda_verification(args: argparse.Namespace) -> dict
         snapshots.append(capture_cuda_memory("pytriton shared endpoints bound", device=args.device, require_cuda=True))
         start_pytriton(shared_triton)
         time.sleep(args.pytriton_settle_seconds)
+        wait_for_pytriton_model(args, pytriton_modules, args.pytriton_model_a)
+        wait_for_pytriton_model(args, pytriton_modules, args.pytriton_model_b)
         snapshots.append(capture_cuda_memory("pytriton shared endpoints active", device=args.device, require_cuda=True))
         sample_smi_if_requested(args, smi_samples, "pytriton shared endpoints active")
 
@@ -196,6 +199,8 @@ def run_pytriton_random_lora_cuda_verification(args: argparse.Namespace) -> dict
         snapshots.append(capture_cuda_memory("pytriton duplicated endpoints bound", device=args.device, require_cuda=True))
         start_pytriton(duplicated_triton)
         time.sleep(args.pytriton_settle_seconds)
+        wait_for_pytriton_model(args, pytriton_modules, args.pytriton_model_a)
+        wait_for_pytriton_model(args, pytriton_modules, args.pytriton_model_b)
         snapshots.append(capture_cuda_memory("pytriton duplicated endpoints active", device=args.device, require_cuda=True))
         sample_smi_if_requested(args, smi_samples, "pytriton duplicated endpoints active")
 
@@ -366,16 +371,11 @@ def bind_pytriton_model(
     )
 
 
-def start_pytriton(triton: Any) -> threading.Thread:
+def start_pytriton(triton: Any) -> None:
     run = getattr(triton, "run", None)
-    serve = getattr(triton, "serve", None)
-    target = run if callable(run) else serve
-    if not callable(target):
-        raise TypeError("PyTriton object provides neither run() nor serve()")
-
-    thread = threading.Thread(target=target, daemon=True)
-    thread.start()
-    return thread
+    if not callable(run):
+        raise TypeError("PyTriton object does not provide run()")
+    run()
 
 
 def stop_pytriton(triton: Any) -> None:
@@ -392,8 +392,30 @@ def infer_pytriton_batch(
     input_batch: Any,
 ) -> dict[str, Any]:
     ModelClient = pytriton_modules["ModelClient"]
-    with ModelClient(f"localhost:{args.pytriton_http_port}", model_name) as client:
+    with ModelClient(
+        pytriton_client_url(args),
+        model_name,
+        init_timeout_s=args.pytriton_client_timeout_seconds,
+        inference_timeout_s=args.pytriton_client_timeout_seconds,
+    ) as client:
         return client.infer_batch(image=input_batch)
+
+
+def wait_for_pytriton_model(args: argparse.Namespace, pytriton_modules: dict[str, Any], model_name: str) -> None:
+    ModelClient = pytriton_modules["ModelClient"]
+    with ModelClient(
+        pytriton_client_url(args),
+        model_name,
+        init_timeout_s=args.pytriton_client_timeout_seconds,
+        inference_timeout_s=args.pytriton_client_timeout_seconds,
+    ) as client:
+        client.wait_for_model(args.pytriton_client_timeout_seconds)
+
+
+def pytriton_client_url(args: argparse.Namespace) -> str:
+    if args.pytriton_client_protocol == "grpc":
+        return f"grpc://localhost:{args.pytriton_grpc_port}"
+    return f"http://localhost:{args.pytriton_http_port}"
 
 
 def reset_cuda(torch: Any, device: str) -> None:

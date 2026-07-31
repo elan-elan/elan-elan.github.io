@@ -37,8 +37,8 @@ class TaskSpec:
 
 
 tasks = {
-    "roof_damage": TaskSpec(adapter_name="roof_damage", head_name="roof_damage"),
-    "pool_detection": TaskSpec(adapter_name="pool_detection", head_name="pool_detection"),
+    "task_a": TaskSpec(adapter_name="task_a", head_name="task_a"),
+    "task_b": TaskSpec(adapter_name="task_b", head_name="task_b"),
 }
 ```
 
@@ -48,8 +48,8 @@ The important part is that the backbone is passed in once:
 service = SharedMultiAdapterService(
     backbone=shared_peft_model,
     heads={
-        "roof_damage": roof_damage_head,
-        "pool_detection": pool_detection_head,
+        "task_a": task_a_head,
+        "task_b": task_b_head,
     },
     tasks=tasks,
 )
@@ -103,12 +103,12 @@ class TritonEndpoints:
         self.service = service
 
     @batch
-    def infer_roof_damage(self, image):
-        return self.service.infer_task("roof_damage", image)
+    def infer_task_a(self, image):
+        return self.service.infer_task("task_a", image)
 
     @batch
-    def infer_pool_detection(self, image):
-        return self.service.infer_task("pool_detection", image)
+    def infer_task_b(self, image):
+        return self.service.infer_task("task_b", image)
 ```
 
 The exact `Triton.bind()` code depends on the input and output tensor contracts, but the memory rule does not change: bind methods on the same object if the model should be shared.

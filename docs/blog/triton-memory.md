@@ -20,7 +20,7 @@ endpoint B -> shared backbone + LoRA B + head B
 
 <p class="cvpr-callout">The key idea is simple: PyTriton can expose multiple endpoints, but GPU memory is saved only if those endpoints share the same Python model object.</p>
 
-This post walks through the pattern with small code examples, then shows the CUDA memory measurement from an active PyTriton random-LoRA test run on a Tesla T4.
+This post walks through the pattern with small code examples, then shows the CUDA memory measurement from an active PyTriton random-LoRA test run on a Tesla T4. The reproducible command is included below, and the measurement script is linked so the exact serving setup is easy to inspect.
 
 ## The Deployment Shape
 
@@ -149,31 +149,60 @@ One practical detail matters for ConvNeXt: depthwise/grouped `Conv2d` layers are
 
 ## The CUDA Test
 
-The measurement script starts a real PyTriton server and compares two paths:
+The [measurement script](https://github.com/elan-elan/elan-elan.github.io/blob/triton-test/code/triton_memory/scripts/cuda_verify_memory.py) starts a real PyTriton server and compares two paths:
 
 - **Shared path:** `TaskA` and `TaskB` are two PyTriton model names bound to one service object, one CUDA-resident backbone, two random LoRA adapters, and two heads.
 - **Duplicated path:** `TaskA` and `TaskB` are two PyTriton model names backed by two independently constructed CUDA-resident backbones.
 
 Both endpoints are warmed through `pytriton.client.ModelClient`, so the result is a serving-path measurement rather than a direct eager-mode call.
 
-The command was:
+The most reproducible way to run it is inside NVIDIA's Triton Server container. The [Dockerfile](https://github.com/elan-elan/elan-elan.github.io/blob/triton-test/code/triton_memory/docker/Dockerfile.cuda) starts from `nvcr.io/nvidia/tritonserver:24.10-py3`, then installs PyTorch, timm, PEFT, and PyTriton.
+
+If this is a fresh CUDA host, first check that Docker can see the GPU:
 
 ```bash
-python code/triton_memory/scripts/cuda_verify_memory.py \
-  --device cuda:0 \
-  --random-lora \
-  --no-pretrained \
-  --base-model convnext_tiny.dinov3_lvd1689m \
-  --classes-a 5 \
-  --classes-b 12 \
-  --output-dir code/triton_memory/results \
-    --sample-nvidia-smi \
-    --pytriton-http-port 8200 \
-    --pytriton-grpc-port 8201 \
-    --pytriton-metrics-port 8202 \
-    --pytriton-client-protocol grpc \
-    --pytriton-client-timeout-seconds 300
+docker run --rm --gpus all nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04 nvidia-smi
 ```
+
+From the repository root on a CUDA host, build the image:
+
+```bash
+docker build \
+    -f code/triton_memory/docker/Dockerfile.cuda \
+    -t triton-memory:24.10 \
+    code/triton_memory
+```
+
+Then run the active PyTriton memory test:
+
+```bash
+docker run --rm \
+    --gpus all \
+    --ipc=host \
+    --shm-size=8g \
+    -v "$PWD":/workspace \
+    -w /workspace \
+    -p 8200:8200 \
+    -p 8201:8201 \
+    -p 8202:8202 \
+    triton-memory:24.10 \
+    python3 code/triton_memory/scripts/cuda_verify_memory.py \
+        --device cuda:0 \
+        --random-lora \
+        --no-pretrained \
+        --base-model convnext_tiny.dinov3_lvd1689m \
+        --classes-a 5 \
+        --classes-b 12 \
+        --output-dir code/triton_memory/results \
+        --sample-nvidia-smi \
+        --pytriton-http-port 8200 \
+        --pytriton-grpc-port 8201 \
+        --pytriton-metrics-port 8202 \
+        --pytriton-client-protocol grpc \
+        --pytriton-client-timeout-seconds 300
+```
+
+The script writes JSON and Markdown summaries under `code/triton_memory/results/`. The table below was copied from one of those generated summaries.
 
 The run used a Tesla T4 with PyTriton `0.7.0`, PyTorch `2.6.0+cu124`, PEFT `0.20.0`, timm `1.0.28`, and CUDA `12.4`.
 
@@ -238,4 +267,4 @@ many PyTriton endpoints
 
 That pattern keeps deployment simple and makes GPU memory scale with adapters and heads instead of with repeated backbone copies.
 
-The supporting code and measurement harness live in the [`code/triton_memory`](https://github.com/elan-elan/elan-elan.github.io/tree/triton-test/code/triton_memory) directory.
+The supporting code lives in the [`code/triton_memory`](https://github.com/elan-elan/elan-elan.github.io/tree/triton-test/code/triton_memory) directory. The two most relevant files are the [measurement script](https://github.com/elan-elan/elan-elan.github.io/blob/triton-test/code/triton_memory/scripts/cuda_verify_memory.py) and the [CUDA Dockerfile](https://github.com/elan-elan/elan-elan.github.io/blob/triton-test/code/triton_memory/docker/Dockerfile.cuda).

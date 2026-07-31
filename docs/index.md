@@ -15,3 +15,9 @@ Elan is also a named inventor on patented approaches in property analytics, incl
 	<strong>Mechanisms for structured visual reasoning</strong>
 	<em>Read the report index</em>
 </a>
+
+<a class="home-writing-card" href="blog/triton-memory/">
+	<span>PyTriton And LoRA</span>
+	<strong>Saving GPU memory with one shared backbone</strong>
+	<em>Read the memory note</em>
+</a>

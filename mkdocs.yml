@@ -8,6 +8,7 @@ theme:
 nav:
   - Home: index.md
   - CVPR 2026: blog/cvpr2026.md
+  - PyTriton LoRA Memory: blog/triton-memory.md
 
 not_in_nav: |
   blog/cvpr2026/3d-geometry.md
@@ -25,10 +26,18 @@ extra:
 markdown_extensions:
   - admonition
   - attr_list
-  - fenced_code
   - md_in_html
   - pymdownx.arithmatex:
       generic: true
+  - pymdownx.highlight:
+      anchor_linenums: false
+      guess_lang: false
+      linenums: false
+      noclasses: false
+      pygments_lang_class: true
+      use_pygments: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
   - tables
   - toc:
       permalink: true
@@ -37,6 +46,7 @@ extra_css:
   - stylesheets/blog.css
 
 extra_javascript:
+  - javascripts/syntax-highlight.js?v=20260730
   - javascripts/mathjax.js
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
   - https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js

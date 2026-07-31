@@ -220,13 +220,15 @@ def run_pytriton_random_lora_cuda_verification(args: argparse.Namespace) -> dict
     finally:
         stop_pytriton(duplicated_triton)
 
-    allocated_by_label = {snapshot.label: snapshot.allocated_mib for snapshot in snapshots}
+    snapshot_by_label = {snapshot.label: snapshot for snapshot in snapshots}
+    allocated_by_label = {label: snapshot.allocated_mib for label, snapshot in snapshot_by_label.items()}
     deltas = {
         "pytriton_shared_endpoint_overhead_mib": allocated_by_label["pytriton shared endpoints active"]
         - allocated_by_label["pytriton shared service ready"],
         "pytriton_duplicated_minus_shared_mib": allocated_by_label["pytriton duplicated warm-up task B"]
         - shared_allocated,
-        "pytriton_shared_warmup_peak_mib": allocated_by_label["pytriton shared warm-up task B"],
+        "pytriton_shared_warmup_allocated_mib": allocated_by_label["pytriton shared warm-up task B"],
+        "pytriton_shared_warmup_peak_mib": snapshot_by_label["pytriton shared warm-up task B"].peak_mib,
     }
     keep_alive = (duplicated_triton, endpoint_a, endpoint_b, service_a, service_b, duplicated_input_batch)
     if keep_alive is None:  # pragma: no cover - keeps variables live for measurement clarity

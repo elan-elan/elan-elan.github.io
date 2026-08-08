@@ -11,7 +11,7 @@
       {
         name: "Vision",
         count: 1761,
-        color: "#2f6f7e",
+        color: "#275f5a",
         tasks: [
           { name: "Image Understanding", count: 630 },
           { name: "3D generation", count: 220 },
@@ -37,7 +37,7 @@
       {
         name: "General",
         count: 1236,
-        color: "#4969a9",
+        color: "#4f7770",
         tasks: [
           { name: "Language Modeling", count: 700 },
           { name: "Reinforcement Learning", count: 178 },
@@ -60,7 +60,7 @@
       {
         name: "Video",
         count: 304,
-        color: "#9a6a2f",
+        color: "#b66f2d",
         tasks: [
           { name: "Video generation", count: 167 },
           { name: "Video classification", count: 91 },
@@ -73,7 +73,7 @@
       {
         name: "Language",
         count: 102,
-        color: "#7b5ea7",
+        color: "#6d6f8c",
         tasks: [
           { name: "Question Answering", count: 98 },
           { name: "Summarization", count: 3 },
@@ -83,7 +83,7 @@
       {
         name: "Audio",
         count: 12,
-        color: "#4f7f45",
+        color: "#60785c",
         tasks: [
           { name: "Automatic Speech Recognition", count: 8 },
           { name: "Audio understanding", count: 2 },
@@ -94,7 +94,7 @@
       {
         name: "Other",
         count: 1,
-        color: "#8a4d62",
+        color: "#8b5f61",
         tasks: [{ name: "Tabular Learning", count: 1 }],
       },
     ],
@@ -187,7 +187,7 @@
       const track = createElement("span", "cvpr-stat-track");
       const fill = createElement("span", "cvpr-stat-fill");
   fill.style.width = `${Math.max(percentOfMax, 0.8)}%`;
-      fill.style.backgroundColor = bar.color || options.color || "#2f6f7e";
+      fill.style.backgroundColor = bar.color || options.color || "#275f5a";
       track.appendChild(fill);
       row.appendChild(track);
 

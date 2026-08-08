@@ -1,27 +1,30 @@
 # elan-elan.github.io
 
-Personal website and research blog for [https://elan-elan.github.io](https://elan-elan.github.io), built with MkDocs and the [mkdocs-simple-blog](https://github.com/FernandoCelmer/mkdocs-simple-blog) theme. The CVPR 2026 section turns conference notes into public, mechanism-focused writeups about geospatial AI, structured geometry, diffusion, 3D reconstruction, tokenization, and VLM reliability.
+An independent MkDocs site for research notes on geospatial AI, structured
+geometry, diffusion, 3D reconstruction, tokenization, and VLM reliability. The
+site uses the
+[mkdocs-simple-blog](https://github.com/FernandoCelmer/mkdocs-simple-blog)
+theme and is deployed through GitHub Pages.
 
 ## Setup
 
-Install the locked environment:
+Install [uv](https://docs.astral.sh/uv/). Project dependencies are declared in
+`pyproject.toml` and resolved automatically by `uv run`.
 
-```bash
-uv sync
-```
+Python 3.13 is recommended.
 
 ## Preview
 
 Run the local MkDocs server:
 
 ```bash
-uv run mkdocs serve
+uv run --python 3.13 mkdocs serve
 ```
 
 Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/). If that port is busy, use another one:
 
 ```bash
-uv run mkdocs serve -a 127.0.0.1:8001
+uv run --python 3.13 mkdocs serve -a 127.0.0.1:8001
 ```
 
 ## Build
@@ -29,7 +32,7 @@ uv run mkdocs serve -a 127.0.0.1:8001
 Build the static site before publishing:
 
 ```bash
-uv run mkdocs build --strict
+uv run --python 3.13 mkdocs build --strict
 ```
 
 The generated output is written to `site/`, which is ignored by git and should not be edited by hand.
@@ -41,5 +44,5 @@ GitHub Pages should be configured to use **GitHub Actions**. On pushes to `main`
 For local checks, use the same build command as CI:
 
 ```bash
-uv run mkdocs build --strict
+uv run --python 3.13 mkdocs build --strict
 ```

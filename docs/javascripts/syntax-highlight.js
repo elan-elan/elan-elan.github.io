@@ -1,3 +1,4 @@
+(() => {
 const escapeHtml = (value) =>
   value
     .replace(/&/g, "&amp;")
@@ -56,6 +57,10 @@ const fitCodeBlockHeight = (block) => {
 
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("pre.highlight code").forEach((block) => {
+    if (block.dataset.syntaxHighlighted === "true") {
+      return;
+    }
+
     const language = Array.from(block.classList).find((name) => name.startsWith("language-"));
     const source = block.textContent || "";
 
@@ -65,6 +70,8 @@ document.addEventListener("DOMContentLoaded", () => {
       block.innerHTML = renderTokens(source, bashPattern, classifyBash);
     }
 
+    block.dataset.syntaxHighlighted = "true";
     fitCodeBlockHeight(block);
   });
 });
+})();

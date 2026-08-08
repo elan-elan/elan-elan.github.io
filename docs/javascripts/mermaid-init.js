@@ -8,14 +8,18 @@
       startOnLoad: true,
       theme: "base",
       themeVariables: {
-        background: "#fbfcfe",
-        primaryColor: "#f7f9fc",
-        primaryBorderColor: "#9db7c1",
-        primaryTextColor: "#1f2a3a",
-        lineColor: "#4969a9",
-        secondaryColor: "#eef2f6",
-        tertiaryColor: "#ffffff",
-        fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+        background: "#f3f2ea",
+        primaryColor: "#e8e9df",
+        primaryBorderColor: "#69746e",
+        primaryTextColor: "#17201f",
+        lineColor: "#275f5a",
+        secondaryColor: "#d8e3dd",
+        secondaryBorderColor: "#69746e",
+        secondaryTextColor: "#17201f",
+        tertiaryColor: "#f3f2ea",
+        tertiaryBorderColor: "#aeb8b1",
+        tertiaryTextColor: "#49524f",
+        fontFamily: "'Avenir Next', Avenir, 'Helvetica Neue', sans-serif"
       },
       flowchart: {
         curve: "basis",

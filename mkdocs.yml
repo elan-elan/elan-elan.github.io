@@ -44,6 +44,7 @@ markdown_extensions:
 
 extra_css:
   - stylesheets/blog.css
+  - stylesheets/publication.css
 
 extra_javascript:
   - javascripts/syntax-highlight.js?v=20260730
